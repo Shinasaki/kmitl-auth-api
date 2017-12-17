@@ -4,53 +4,74 @@ header("Content-Type: application/json;charset=utf-8");
 
 // Spam limit
 if (!spam(600)) { exit(); }
-
+$contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
 $request = 1;
+
+echo $_SERVER['REQUEST_METHOD'];
 if(strcasecmp($_SERVER['REQUEST_METHOD'], 'POST') != 0){
     $des = 'Request method must be POST!';
     $code = 400;
     $detail = 'Bad request';
     $request = 0;
-}
-$contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
-if(strcasecmp($contentType, 'application/json') != 0){
+} elseif (strcasecmp($contentType, 'application/json') != 0) {
     $des = 'Content type must be: application/json';
     $code = 400;
     $detail = 'Bad request';
     $request = 0;
 }
 
-
-
+// check pass
 if ($request) {
     $userRaw = trim(file_get_contents("php://input"));
     $userObj = json_decode($userRaw, true);
     if(is_array($userObj)){
 
+        $username = $userObj['username'];
+        $password = $userObj['password'];
 
-        // connect to primary
-        $ldap = ldap_connect('ldap://161.246.38.141');
+        // check field empty
+        if (empty($username) || empty($password)) {
+            $des = "Field must not empty.";
+            $code = "400";
+            $detail = "Bad request";
+        
+        // check len string
+        } elseif ( strlen($username) !=10 || strlen($password) != 8) {
+            $des = "Field must have 8 characters.";
+            $code = "400";
+            $detail = "Bad request";
+        
+        // connect ldap
+        } else {
 
-        // try login to test connect with anonymous
-        $anon = @ldap_bind ($ldap);
-        if (!$anon) {
-            $des = "Server down.";
-            $code = 500;
-            $detail = 'Internal Error';
+            // connect to primary
+            $ldap = ldap_connect('ldap://161.246.38.141');
+    
+            // try login to test connect with anonymous
+            $anon = @ldap_bind ($ldap);
+            if (!$anon) {
+                $des = "Server down.";
+                $code = 500;
+                $detail = 'Internal Error';
+            } else {
+                // login with user & password
+                if ( $login = ldap_bind($ldap, $username.'@it.kmitl.ac.th', $password)) {
+                    // Login success
+                    $des = "Logged in.";
+                    $code = 200;
+                    $detail = "Ok";
+                }else{
+                    // username/password invalid
+                    $des = 'Username or Password incorrect.';
+                    $code = 400;
+                    $detail = 'Bad request';
+                }
+            }
         }
-            
-        if( $login = ldap_bind($ldap, $username.'@it.kmitl.ac.th', $password) ){
-            //Login success
-            $des = "Logged in.";
-            $code = 200;
-            $detail = "Ok";
-        }else{
-            //username/password invalid
-            $des = 'Username or Password incorrect.';
-            $code = 400;
-            $detail = 'Bad request';
-        }		
 
+
+
+    // request must be json
     } else {
         $des = 'Received content contained invalid JSON!';
         $code = 400;
