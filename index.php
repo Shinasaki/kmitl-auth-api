@@ -1,19 +1,24 @@
 <?php
 session_start();
 header("Content-Type: application/json;charset=utf-8");
+header("Access-Control-Allow-Origin: *");
+// headers.append("Content-Type: application/json;charset=utf-8");
+// headers.append('Access-Control-Allow-Origin: *');
+// headers.append('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+// headers.append('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token');
 
 // Spam limit
 if (!spam(600)) { exit(); }
 $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
 $request = 1;
+// echo $contentType;
 
-echo $_SERVER['REQUEST_METHOD'];
 if(strcasecmp($_SERVER['REQUEST_METHOD'], 'POST') != 0){
     $des = 'Request method must be POST!';
     $code = 400;
     $detail = 'Bad request';
     $request = 0;
-} elseif (strcasecmp($contentType, 'application/json') != 0) {
+} elseif (strcasecmp(explode(";", $contentType)[0], 'application/json') != 0) {
     $des = 'Content type must be: application/json';
     $code = 400;
     $detail = 'Bad request';
@@ -23,6 +28,7 @@ if(strcasecmp($_SERVER['REQUEST_METHOD'], 'POST') != 0){
 // check pass
 if ($request) {
     $userRaw = trim(file_get_contents("php://input"));
+    echo $userRaw . "WTF";
     $userObj = json_decode($userRaw, true);
     if(is_array($userObj)){
 
