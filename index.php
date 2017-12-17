@@ -28,7 +28,6 @@ if(strcasecmp($_SERVER['REQUEST_METHOD'], 'POST') != 0){
 // check pass
 if ($request) {
     $userRaw = trim(file_get_contents("php://input"));
-    echo $userRaw . "WTF";
     $userObj = json_decode($userRaw, true);
     if(is_array($userObj)){
 
